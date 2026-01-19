@@ -1,0 +1,39 @@
+data:
+  ab_internal:
+    ql: 100
+    sl: 100
+  allowedHosts:
+    hosts:
+      - ${host}
+  connectorBuildOptions:
+    baseImage: docker.io/airbyte/java-connector-base:2.0.0@sha256:5a1a21c75c5e1282606de9fa539ba136520abe2fbd013058e988bb0297a9f454
+  connectorSubtype: database
+  connectorTestSuitesOptions:
+    - suite: unitTests
+    - suite: integrationTests
+  connectorType: source
+  definitionId: 447e0381-3780-4b46-bb62-00a4e3c8b8e3
+  dockerImageTag: 0.1.0
+  dockerRepository: airbyte/source-db2-ibmi
+  documentationUrl: https://docs.airbyte.com/integrations/sources/db2-ibmi
+  githubIssueLabel: source-db2-ibmi
+  icon: db2.svg
+  license: ELv2
+  name: IBM i DB2
+  registryOverrides:
+    cloud:
+      enabled: false
+    oss:
+      enabled: true
+  releaseStage: alpha
+  supportLevel: community
+  tags:
+    - language:java
+  externalDocumentationUrls:
+    - title: IBM i DB2 JTOpen documentation
+      url: https://github.com/IBM/JTOpen
+      type: developer_guide
+    - title: IBM i SQL reference
+      url: https://www.ibm.com/docs/en/i/7.5?topic=reference-sql
+      type: sql_reference
+metadataSpecVersion: "1.0"
