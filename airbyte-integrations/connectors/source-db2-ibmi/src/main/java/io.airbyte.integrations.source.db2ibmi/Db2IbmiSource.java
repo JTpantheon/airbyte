@@ -42,6 +42,19 @@ public class Db2IbmiSource extends AbstractJdbcSource<JDBCType> implements Sourc
   private static final String KEY_STORE_PASS = RandomStringUtils.randomAlphanumeric(8);
   private static final String KEY_STORE_FILE_PATH = "clientkeystore.jks";
   private static final int INTERMEDIATE_STATE_EMISSION_FREQUENCY = 10_000;
+  
+  // IBM i default ports
+  private static final int DEFAULT_IBM_I_PORT = 8471; // DRDA/DDM protocol port
+  
+  // IBM i system schemas
+  private static final Set<String> IBM_I_SYSTEM_SCHEMAS = Set.of(
+      "QSYS", "QSYS2", "QTEMP", "QGPL", "QUSRSYS", "QHLPSYS", "QUSRTOOLS",
+      "SYSIBM", "SYSIBMADM", "SYSPROC", "SYSPUBLIC", "SYSSTAT", "SYSTOOLS");
+  
+  // JTOpen SSL properties
+  private static final String JTOPEN_SECURE_PROPERTY = "secure";
+  private static final String JTOPEN_SSL_TRUSTSTORE_PROPERTY = "sslTrustStore";
+  private static final String JTOPEN_SSL_TRUSTSTORE_PASSWORD_PROPERTY = "sslTrustStorePassword";
 
   public Db2IbmiSource() {
     super(DRIVER_CLASS, AdaptiveStreamingQueryConfig::new, new Db2IbmiSourceOperations());
@@ -64,7 +77,7 @@ public class Db2IbmiSource extends AbstractJdbcSource<JDBCType> implements Sourc
 
     // Add port if specified and not default
     final int port = config.get(JdbcUtils.PORT_KEY).asInt();
-    if (port != 8471 && port != 0) {
+    if (port != DEFAULT_IBM_I_PORT && port != 0) {
       jdbcUrl.append(";portNumber=").append(port);
     }
 
@@ -91,9 +104,7 @@ public class Db2IbmiSource extends AbstractJdbcSource<JDBCType> implements Sourc
   @Override
   public Set<String> getExcludedInternalNameSpaces() {
     // IBM i system schemas - different from DB2 z/OS
-    return Set.of(
-        "QSYS", "QSYS2", "QTEMP", "QGPL", "QUSRSYS", "QHLPSYS", "QUSRTOOLS",
-        "SYSIBM", "SYSIBMADM", "SYSPROC", "SYSPUBLIC", "SYSSTAT", "SYSTOOLS");
+    return IBM_I_SYSTEM_SCHEMAS;
   }
 
   @Override
@@ -121,11 +132,17 @@ public class Db2IbmiSource extends AbstractJdbcSource<JDBCType> implements Sourc
 
   private CheckedFunction<Connection, PreparedStatement, SQLException> getPrivileges() {
     // IBM i uses QSYS2 catalog views instead of SYSIBMADM
+    // Build exclusion list from system schemas
+    final String excludedSchemas = IBM_I_SYSTEM_SCHEMAS.stream()
+        .filter(s -> s.startsWith("Q")) // Only Q* schemas for query performance
+        .map(s -> "'" + s + "'")
+        .collect(Collectors.joining(","));
+    
     return connection -> connection.prepareStatement(
         "SELECT DISTINCT TABLE_NAME AS OBJECTNAME, TABLE_SCHEMA AS OBJECTSCHEMA " +
         "FROM QSYS2.SYSTABLES " +
         "WHERE TABLE_TYPE IN ('T', 'P') " +
-        "AND TABLE_SCHEMA NOT IN ('QSYS', 'QSYS2', 'QTEMP')");
+        "AND TABLE_SCHEMA NOT IN (" + excludedSchemas + ")");
   }
 
   private JdbcPrivilegeDto getPrivilegeDto(final JsonNode jsonNode) {
@@ -149,9 +166,9 @@ public class Db2IbmiSource extends AbstractJdbcSource<JDBCType> implements Sourc
           throw new RuntimeException("Failed to import certificate into Java Keystore");
         }
         // JTOpen uses 'secure=true' for SSL/TLS connections (modern property)
-        additionalParameters.add("secure=true");
-        additionalParameters.add("sslTrustStore=" + KEY_STORE_FILE_PATH);
-        additionalParameters.add("sslTrustStorePassword=" + keyStorePassword);
+        additionalParameters.add(JTOPEN_SECURE_PROPERTY + "=true");
+        additionalParameters.add(JTOPEN_SSL_TRUSTSTORE_PROPERTY + "=" + KEY_STORE_FILE_PATH);
+        additionalParameters.add(JTOPEN_SSL_TRUSTSTORE_PASSWORD_PROPERTY + "=" + keyStorePassword);
       }
     }
     return additionalParameters;
