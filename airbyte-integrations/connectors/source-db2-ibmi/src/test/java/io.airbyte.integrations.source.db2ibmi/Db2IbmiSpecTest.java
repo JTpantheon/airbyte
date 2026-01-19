@@ -36,11 +36,14 @@ public class Db2IbmiSpecTest {
     configText = """
                  {
                    "host": "localhost",
-                   "port": 1521,
-                   "db": "db",
+                   "port": 446,
+                   "db": "*SYSBAS",
                    "username": "test",
                    "password": "password",
-                   "jdbc_url_params": "property1=pValue1&property2=pValue2"
+                   "jdbc_url_params": "property1=pValue1;property2=pValue2",
+                   "encryption": {
+                     "encryption_method": "unencrypted"
+                   }
                  }
                  """;
     final String spec = MoreResources.readResource("spec.json");

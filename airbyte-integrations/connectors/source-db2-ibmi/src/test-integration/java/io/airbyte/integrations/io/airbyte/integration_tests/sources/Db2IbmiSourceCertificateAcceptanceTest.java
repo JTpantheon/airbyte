@@ -127,7 +127,7 @@ public class Db2IbmiSourceCertificateAcceptanceTest extends SourceAcceptanceTest
     dataSource = DataSourceFactory.create(
         config.get(JdbcUtils.USERNAME_KEY).asText(),
         config.get(JdbcUtils.PASSWORD_KEY).asText(),
-        Db2Source.DRIVER_CLASS,
+        Db2IbmiSource.DRIVER_CLASS,
         jdbcUrl);
 
     try {
