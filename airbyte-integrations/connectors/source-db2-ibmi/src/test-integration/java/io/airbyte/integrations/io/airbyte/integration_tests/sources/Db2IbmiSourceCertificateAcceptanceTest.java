@@ -15,7 +15,7 @@ import io.airbyte.cdk.integrations.standardtest.source.SourceAcceptanceTest;
 import io.airbyte.cdk.integrations.standardtest.source.TestDestinationEnv;
 import io.airbyte.commons.json.Jsons;
 import io.airbyte.commons.resources.MoreResources;
-import io.airbyte.integrations.source.db2ibmi.Db2Source;
+import io.airbyte.integrations.source.db2ibmi.Db2IbmiSource;
 import io.airbyte.protocol.models.Field;
 import io.airbyte.protocol.models.JsonSchemaType;
 import io.airbyte.protocol.models.v0.CatalogHelpers;
@@ -35,7 +35,7 @@ import org.junit.jupiter.api.Disabled;
 import org.testcontainers.containers.Db2Container;
 
 @Disabled
-public class Db2SourceCertificateAcceptanceTest extends SourceAcceptanceTest {
+public class Db2IbmiSourceCertificateAcceptanceTest extends SourceAcceptanceTest {
 
   private static final String SCHEMA_NAME = "SOURCE_INTEGRATION_TEST";
   private static final String STREAM_NAME1 = "ID_AND_NAME1";
@@ -50,7 +50,7 @@ public class Db2SourceCertificateAcceptanceTest extends SourceAcceptanceTest {
 
   @Override
   protected String getImageName() {
-    return "airbyte/source-db2:dev";
+    return "airbyte/source-db2-ibmi:dev";
   }
 
   @Override

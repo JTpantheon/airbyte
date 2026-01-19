@@ -14,7 +14,7 @@ import io.airbyte.cdk.integrations.standardtest.source.AbstractSourceDatabaseTyp
 import io.airbyte.cdk.integrations.standardtest.source.TestDataHolder;
 import io.airbyte.cdk.integrations.standardtest.source.TestDestinationEnv;
 import io.airbyte.commons.json.Jsons;
-import io.airbyte.integrations.source.db2ibmi.Db2Source;
+import io.airbyte.integrations.source.db2ibmi.Db2IbmiSource;
 import io.airbyte.protocol.models.JsonSchemaType;
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Disabled;
 import org.testcontainers.containers.Db2Container;
 
 @Disabled
-public class Db2SourceDatatypeTest extends AbstractSourceDatabaseTypeTest {
+public class Db2IbmiSourceDatatypeTest extends AbstractSourceDatabaseTypeTest {
 
   private static final String CREATE_TABLE_SQL = "CREATE TABLE %1$s(%2$s INTEGER NOT NULL PRIMARY KEY, %3$s %4$s)";
   private static final String CREATE_TABLE_SQL_UNICODE = CREATE_TABLE_SQL + " CCSID UNICODE";
@@ -33,7 +33,7 @@ public class Db2SourceDatatypeTest extends AbstractSourceDatabaseTypeTest {
 
   @Override
   protected String getImageName() {
-    return "airbyte/source-db2:dev";
+    return "airbyte/source-db2-ibmi:dev";
   }
 
   @Override
@@ -65,7 +65,7 @@ public class Db2SourceDatatypeTest extends AbstractSourceDatabaseTypeTest {
     dslContext = DSLContextFactory.create(
         config.get(JdbcUtils.USERNAME_KEY).asText(),
         config.get(JdbcUtils.PASSWORD_KEY).asText(),
-        Db2Source.DRIVER_CLASS,
+        Db2IbmiSource.DRIVER_CLASS,
         String.format(DatabaseDriver.DB2.getUrlFormatString(),
             config.get(JdbcUtils.HOST_KEY).asText(),
             config.get(JdbcUtils.PORT_KEY).asInt(),

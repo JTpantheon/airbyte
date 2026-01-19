@@ -18,7 +18,7 @@ import io.airbyte.cdk.integrations.standardtest.source.SourceAcceptanceTest;
 import io.airbyte.cdk.integrations.standardtest.source.TestDestinationEnv;
 import io.airbyte.commons.json.Jsons;
 import io.airbyte.commons.resources.MoreResources;
-import io.airbyte.integrations.source.db2.Db2IbmiSource;
+import io.airbyte.integrations.source.db2ibmi.Db2IbmiSource;
 import io.airbyte.protocol.models.Field;
 import io.airbyte.protocol.models.JsonSchemaType;
 import io.airbyte.protocol.models.v0.AirbyteCatalog;
@@ -54,7 +54,7 @@ public class Db2IbmiSourceAcceptanceTest extends SourceAcceptanceTest {
 
   @Override
   protected String getImageName() {
-    return "airbyte/source-db2:dev";
+    return "airbyte/source-db2-ibmi:dev";
   }
 
   @Override
