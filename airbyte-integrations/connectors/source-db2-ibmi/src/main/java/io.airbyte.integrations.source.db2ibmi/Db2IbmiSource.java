@@ -56,11 +56,28 @@ public class Db2IbmiSource extends AbstractJdbcSource<JDBCType> implements Sourc
 
   @Override
   public JsonNode toDatabaseConfig(final JsonNode config) {
-    // JTOpen JDBC URL format: jdbc:as400://host:port/database
-    final StringBuilder jdbcUrl = new StringBuilder(String.format("jdbc:as400://%s:%d/%s",
+    // JTOpen JDBC URL format: jdbc:as400://host/database;property1=value1;property2=value2
+    // Note: Port is specified as a property if non-default, not in the host part
+    final StringBuilder jdbcUrl = new StringBuilder(String.format("jdbc:as400://%s/%s",
         config.get(JdbcUtils.HOST_KEY).asText(),
-        config.get(JdbcUtils.PORT_KEY).asInt(),
         config.get("db").asText()));
+
+    // Add port if specified and not default
+    final int port = config.get(JdbcUtils.PORT_KEY).asInt();
+    if (port != 8471 && port != 0) {
+      jdbcUrl.append(";portNumber=").append(port);
+    }
+
+    // Add encryption options
+    final var additionalParams = obtainConnectionOptions(config.get(JdbcUtils.ENCRYPTION_KEY));
+    if (!additionalParams.isEmpty()) {
+      jdbcUrl.append(";").append(String.join(";", additionalParams));
+    }
+
+    // Add custom JDBC URL parameters if provided
+    if (config.get(JdbcUtils.JDBC_URL_PARAMS_KEY) != null && !config.get(JdbcUtils.JDBC_URL_PARAMS_KEY).asText().isEmpty()) {
+      jdbcUrl.append(";").append(config.get(JdbcUtils.JDBC_URL_PARAMS_KEY).asText());
+    }
 
     var result = Jsons.jsonNode(ImmutableMap.builder()
         .put(JdbcUtils.JDBC_URL_KEY, jdbcUrl.toString())
@@ -68,31 +85,15 @@ public class Db2IbmiSource extends AbstractJdbcSource<JDBCType> implements Sourc
         .put(JdbcUtils.PASSWORD_KEY, config.get(JdbcUtils.PASSWORD_KEY).asText())
         .build());
 
-    // assume ssl if not explicitly mentioned.
-    final var additionalParams = obtainConnectionOptions(config.get(JdbcUtils.ENCRYPTION_KEY));
-    if (!additionalParams.isEmpty()) {
-      jdbcUrl.append(":").append(String.join(";", additionalParams));
-      jdbcUrl.append(";");
-      result = Jsons.jsonNode(ImmutableMap.builder()
-          .put(JdbcUtils.JDBC_URL_KEY, jdbcUrl.toString())
-          .put(JdbcUtils.USERNAME_KEY, config.get(JdbcUtils.USERNAME_KEY).asText())
-          .put(JdbcUtils.PASSWORD_KEY, config.get(JdbcUtils.PASSWORD_KEY).asText())
-          .put(JdbcUtils.CONNECTION_PROPERTIES_KEY, additionalParams)
-          .build());
-    }
-
-    if (config.get(JdbcUtils.JDBC_URL_PARAMS_KEY) != null && !config.get(JdbcUtils.JDBC_URL_PARAMS_KEY).asText().isEmpty()) {
-      ((ObjectNode) result).put(JdbcUtils.JDBC_URL_PARAMS_KEY, config.get(JdbcUtils.JDBC_URL_PARAMS_KEY).asText());
-    }
-
     return result;
   }
 
   @Override
   public Set<String> getExcludedInternalNameSpaces() {
+    // IBM i system schemas - different from DB2 z/OS
     return Set.of(
-        "NULLID", "SYSCAT", "SQLJ", "SYSFUN", "SYSIBM", "SYSIBMADM", "SYSIBMINTERNAL", "SYSIBMTS",
-        "SYSPROC", "SYSPUBLIC", "SYSSTAT", "SYSTOOLS");
+        "QSYS", "QSYS2", "QTEMP", "QGPL", "QUSRSYS", "QHLPSYS", "QUSRTOOLS",
+        "SYSIBM", "SYSIBMADM", "SYSPROC", "SYSPUBLIC", "SYSSTAT", "SYSTOOLS");
   }
 
   @Override
@@ -119,8 +120,12 @@ public class Db2IbmiSource extends AbstractJdbcSource<JDBCType> implements Sourc
   }
 
   private CheckedFunction<Connection, PreparedStatement, SQLException> getPrivileges() {
+    // IBM i uses QSYS2 catalog views instead of SYSIBMADM
     return connection -> connection.prepareStatement(
-        "SELECT DISTINCT OBJECTNAME, OBJECTSCHEMA FROM SYSIBMADM.PRIVILEGES WHERE OBJECTTYPE = 'TABLE' AND PRIVILEGE = 'SELECT'");
+        "SELECT DISTINCT TABLE_NAME AS OBJECTNAME, TABLE_SCHEMA AS OBJECTSCHEMA " +
+        "FROM QSYS2.SYSTABLES " +
+        "WHERE TABLE_TYPE IN ('T', 'P') " +
+        "AND TABLE_SCHEMA NOT IN ('QSYS', 'QSYS2', 'QTEMP')");
   }
 
   private JdbcPrivilegeDto getPrivilegeDto(final JsonNode jsonNode) {
@@ -143,8 +148,9 @@ public class Db2IbmiSource extends AbstractJdbcSource<JDBCType> implements Sourc
         } catch (final IOException | InterruptedException e) {
           throw new RuntimeException("Failed to import certificate into Java Keystore");
         }
-        additionalParameters.add("sslConnection=true");
-        additionalParameters.add("sslTrustStoreLocation=" + KEY_STORE_FILE_PATH);
+        // JTOpen uses 'secure=true' for SSL/TLS connections (modern property)
+        additionalParameters.add("secure=true");
+        additionalParameters.add("sslTrustStore=" + KEY_STORE_FILE_PATH);
         additionalParameters.add("sslTrustStorePassword=" + keyStorePassword);
       }
     }

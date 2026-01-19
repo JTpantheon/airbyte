@@ -12,18 +12,18 @@
         "order": 0
       },
       "port": {
-        "description": "Port of the database.",
+        "description": "Port of the database. The default for IBM i database connections is 8471 (DRDA/DDM). For SSL connections, use 992.",
         "type": "integer",
         "minimum": 0,
         "maximum": 65536,
-        "default": 446,
-        "examples": ["446", "8471"],
+        "default": 8471,
+        "examples": ["8471", "446", "992"],
         "order": 1
       },
       "db": {
-        "description": "Name of the database.",
+        "description": "Name of the database. Use *SYSBAS for the system database, or specify a specific IBM i library/schema name.",
         "type": "string",
-        "examples": ["*SYSBAS"],
+        "examples": ["*SYSBAS", "MYLIB"],
         "order": 2
       },
       "username": {

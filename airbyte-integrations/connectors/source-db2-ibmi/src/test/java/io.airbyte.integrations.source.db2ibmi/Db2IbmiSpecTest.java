@@ -36,7 +36,7 @@ public class Db2IbmiSpecTest {
     configText = """
                  {
                    "host": "localhost",
-                   "port": 446,
+                   "port": 8471,
                    "db": "*SYSBAS",
                    "username": "test",
                    "password": "password",
