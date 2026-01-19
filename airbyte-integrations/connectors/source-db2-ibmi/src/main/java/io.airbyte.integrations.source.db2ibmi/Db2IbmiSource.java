@@ -153,7 +153,7 @@ public class Db2IbmiSource extends AbstractJdbcSource<JDBCType> implements Sourc
 
   private static String getKeyStorePassword(final JsonNode encryptionKeyStorePassword) {
     var keyStorePassword = KEY_STORE_PASS;
-    if (!encryptionKeyStorePassword.isNull() || !encryptionKeyStorePassword.isEmpty()) {
+    if (!encryptionKeyStorePassword.isNull() && !encryptionKeyStorePassword.isEmpty()) {
       keyStorePassword = encryptionKeyStorePassword.asText();
     }
     return keyStorePassword;
